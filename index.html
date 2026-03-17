@@ -118,11 +118,20 @@ let now=new Date(),vY=now.getFullYear(),vM=now.getMonth(),vista='todas',modoNomb
 function dd(f){const a=new Date(f.getFullYear(),f.getMonth(),f.getDate());return Math.round((a-REF)/86400000);}
 function tc(ci,f){const p=((dd(f)+DESFASE[ci])%28+280)%28;return CICLO[p];}
 function activo(t,h){if(t==='M')return h>=7&&h<15;if(t==='T')return h>=15&&h<23;if(t==='N')return h>=23||h<7;return false;}
+function tcAhora(ci){
+  const a=new Date(),h=a.getHours();
+  if(h>=0&&h<7){
+    const ayer=new Date(a);
+    ayer.setDate(ayer.getDate()-1);
+    if(tc(ci,ayer)==='N') return 'N';
+  }
+  return tc(ci,a);
+}
 function label(t){return modoNombre?LSHORT[t]:LALT[t];}
 function renderNow(){
   const a=new Date(),h=a.getHours();
   document.getElementById('nowChips').innerHTML=COMP.map((c,i)=>{
-    const t=tc(i,a),ok=activo(t,h),lib=t==='L';
+    const t=tcAhora(i),ok=activo(t,h),lib=t==='L';
     const cls=lib?'libre':ok?'activo':'inactivo';
     const txt=lib?'Libre':(modoNombre?LSHORT[t]:LALT[t]);
     return`<div class="nchip ${cls}"><div class="cn">${c.n}</div><div class="ch">${ok?'✓ ':''}${txt}</div></div>`;
