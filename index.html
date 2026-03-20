@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronograma GLP</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.app{font-family:system-ui,sans-serif;display:flex;flex-direction:column;background:#e8e8e8;min-height:100vh}
+.topbar{background:#1a3a5c;color:white;padding:10px 16px}
+.topbar h1{font-size:16px;font-weight:600}
+.now-bar{background:#1a3a5c;padding:6px 16px 10px;border-bottom:2px solid #0f2640}
+.now-bar h3{font-size:10px;color:#aac4e0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;text-align:center}
+.now-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.nchip{border-radius:6px;padding:6px 4px;text-align:center}
+.nchip .cn{font-size:9px;margin-bottom:2px;font-weight:500}
+.nchip .ch{font-size:10px;font-weight:700}
+.nchip.activo{background:#16a34a;color:white}
+.nchip.inactivo{background:#4a4a4a;color:#aaa}
+.nchip.libre{background:#374151;color:#9ca3af}
+.body{display:flex;flex:1}
+.sidebar{width:120px;min-width:120px;background:#1e3a5f;padding:8px 0}
+.sidebar-title{font-size:9px;color:#7aa3c8;text-transform:uppercase;letter-spacing:0.5px;padding:4px 12px 8px}
+.smenu-btn{display:block;width:100%;text-align:left;background:none;border:none;padding:10px 12px;font-size:12px;color:#c8ddf0;cursor:pointer;font-family:inherit;border-left:3px solid transparent}
+.smenu-btn:hover{background:#2a4f7a;color:white}
+.smenu-btn.active{background:#2a4f7a;color:white;border-left:3px solid #60a5fa}
+.smenu-sep{height:1px;background:#2a4f7a;margin:4px 8px}
+.main{flex:1;padding:10px;overflow:auto}
+.nav-row{display:flex;align-items:center;gap:6px;margin-bottom:10px;background:#1a3a5c;border-radius:10px;padding:8px 10px}
+.navbtn{background:#2a5f9e;border:none;border-radius:8px;width:44px;height:44px;cursor:pointer;font-size:22px;font-family:inherit;color:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700}
+.navbtn:active{background:#0f2640;transform:scale(0.95)}
+.titmes{font-size:14px;font-weight:700;flex:1;text-align:center;color:white}
+.modo-btn{background:#2a5f9e;border:none;border-radius:8px;padding:0 12px;height:44px;cursor:pointer;font-size:11px;font-family:inherit;color:white;font-weight:600;flex-shrink:0;white-space:nowrap}
+.modo-btn:active{background:#0f2640;transform:scale(0.95)}
+.cal-wrap{background:white;border-radius:10px;overflow:hidden;margin-bottom:10px}
+.cal-header-bar{padding:8px 12px;font-size:13px;font-weight:700;border-bottom:2px solid rgba(0,0,0,0.1)}
+.dias-hdr{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:4px 6px 0;background:#f5f5f5}
+.dias-hdr span{text-align:center;font-size:10px;color:#888;padding:3px 0;font-weight:600}
+.semanas{padding:4px 6px 6px;background:#f5f5f5}
+.semana{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}
+.dia{border-radius:4px;padding:3px;min-height:46px;background:white;border:1px solid #e8e8e8}
+.dia.vacio{background:transparent;border-color:transparent}
+.dia.hoy{border:2px solid #2563eb;background:#eff6ff}
+.dia.finde{background:#f9f9f9}
+.dnum{font-size:10px;color:#666;margin-bottom:2px;font-weight:600}
+.dia.hoy .dnum{color:#2563eb;font-weight:700}
+.ttag{font-size:9px;border-radius:3px;padding:2px 3px;text-align:center;font-weight:600;white-space:nowrap}
+.t-m{background:#bbf7d0;color:#14532d}
+.t-t{background:#fde68a;color:#78350f}
+.t-n{background:#c7d2fe;color:#312e81}
+.t-l{background:#f3f4f6;color:#9ca3af}
+.multi-dia{border-radius:4px;padding:3px;min-height:72px;background:white;border:1px solid #e8e8e8}
+.multi-dia.vacio{background:transparent;border-color:transparent}
+.multi-dia.hoy{border:2px solid #2563eb;background:#eff6ff}
+.crow{font-size:8px;border-radius:2px;padding:1px 3px;margin-bottom:1px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-m{background:#bbf7d0;color:#14532d}
+.cr-t{background:#fde68a;color:#78350f}
+.cr-n{background:#c7d2fe;color:#312e81}
+.cr-l{background:#f3f4f6;color:#9ca3af}
+.c1hdr{background:#dbeafe;color:#1e3a8a}
+.c2hdr{background:#dcfce7;color:#14532d}
+.c3hdr{background:#fef9c3;color:#713f12}
+.c4hdr{background:#fce7f3;color:#831843}
+@media(max-width:400px){
+  .sidebar{width:80px;min-width:80px}
+  .smenu-btn{font-size:10px;padding:9px 6px}
+  .now-chips{grid-template-columns:repeat(2,1fr)}
+  .titmes{font-size:12px}
+  .modo-btn{font-size:10px;padding:0 8px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar"><h1>📅 Cronograma GLP</h1></div>
+  <div class="now-bar">
+    <h3>Turno activo ahora</h3>
+    <div class="now-chips" id="nowChips"></div>
+  </div>
+  <div class="body">
+    <div class="sidebar">
+      <div class="sidebar-title">Ver</div>
+      <button class="smenu-btn active" id="btn-todas" onclick="setVista('todas')">📋 Todas</button>
+      <div class="smenu-sep"></div>
+      <button class="smenu-btn" id="btn-0" onclick="setVista(0)">C1 Arguello</button>
+      <button class="smenu-btn" id="btn-1" onclick="setVista(1)">C2 Paloma</button>
+      <button class="smenu-btn" id="btn-2" onclick="setVista(2)">C3 Raillon</button>
+      <button class="smenu-btn" id="btn-3" onclick="setVista(3)">C4 Urdamp.</button>
+    </div>
+    <div class="main">
+      <div class="nav-row">
+        <button class="navbtn" id="btnAnt">‹</button>
+        <span class="titmes" id="titmes"></span>
+        <button class="navbtn" id="btnSig">›</button>
+        <button class="modo-btn" onclick="toggleModo()">Cambiar vista</button>
+      </div>
+      <div id="calContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CICLO='T/M/N/T/N/L/M/M/L/M/M/M/M/L/L/N/L/N/L/N/N/N/T/T/L/T/T/T'.split('/');
+const DESFASE=[0,21,7,14];
+const REF=new Date(2026,2,1);
+const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const COMP=[
+  {n:'C1 - Arguello',hdr:'c1hdr'},
+  {n:'C2 - Paloma',  hdr:'c2hdr'},
+  {n:'C3 - Raillon', hdr:'c3hdr'},
+  {n:'C4 - Urdamp.', hdr:'c4hdr'},
+];
+const LSHORT={M:'Mañana',T:'Tarde',N:'Noche',L:'Libre'};
+const LALT={M:'07-15',T:'15-23',N:'23-07',L:'LIB'};
+const TC={M:'t-m',T:'t-t',N:'t-n',L:'t-l'};
+const CRC={M:'cr-m',T:'cr-t',N:'cr-n',L:'cr-l'};
+let now=new Date(),vY=now.getFullYear(),vM=now.getMonth(),vista='todas',modoNombre=false;
+function dd(f){const a=new Date(f.getFullYear(),f.getMonth(),f.getDate());return Math.round((a-REF)/86400000);}
+function tc(ci,f){const p=((dd(f)+DESFASE[ci])%28+280)%28;return CICLO[p];}
+function label(t){return modoNombre?LSHORT[t]:LALT[t];}
+
+function turnoActivoAhora(ci){
+  const a=new Date(),h=a.getHours();
+  if(h>=0&&h<7){
+    const ayer=new Date(a);
+    ayer.setDate(ayer.getDate()-1);
+    return tc(ci,ayer);
+  }
+  return tc(ci,a);
+}
+
+function esActivo(ci){
+  const h=new Date().getHours();
+  const t=turnoActivoAhora(ci);
+  if(t==='M') return h>=7&&h<15;
+  if(t==='T') return h>=15&&h<23;
+  if(t==='N') return h>=23||h<7;
+  return false;
+}
+
+function renderNow(){
+  document.getElementById('nowChips').innerHTML=COMP.map((c,i)=>{
+    const t=turnoActivoAhora(i);
+    const ok=esActivo(i);
+    const lib=t==='L';
+    const cls=lib?'libre':ok?'activo':'inactivo';
+    const txt=lib?'Libre':(modoNombre?LSHORT[t]:LALT[t]);
+    return`<div class="nchip ${cls}"><div class="cn">${c.n}</div><div class="ch">${ok?'\u2713 ':''}${txt}</div></div>`;
+  }).join('');
+}
+function setVista(v){
+  vista=v;
+  ['todas',0,1,2,3].forEach(x=>{const b=document.getElementById('btn-'+x);if(b)b.classList.toggle('active',x===v);});
+  renderCal();
+}
+function toggleModo(){modoNombre=!modoNombre;renderNow();renderCal();}
+function renderCal(){
+  const primero=new Date(vY,vM,1),ul=new Date(vY,vM+1,0).getDate();
+  let dow=primero.getDay();dow=dow===0?6:dow-1;
+  const hoy=new Date();
+  if(vista==='todas'){
+    let html=`<div class="cal-wrap"><div class="cal-header-bar" style="background:#1a3a5c;color:white">📋 Todas las compañías</div>
+    <div class="dias-hdr"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+    <div class="semanas"><div class="semana">`;
+    for(let v=0;v<dow;v++)html+='<div class="multi-dia vacio"></div>';
+    let col=dow;
+    for(let d=1;d<=ul;d++){
+      const f=new Date(vY,vM,d),esH=f.toDateString()===hoy.toDateString(),esFin=f.getDay()===0||f.getDay()===6;
+      html+=`<div class="multi-dia${esH?' hoy':''}"><div class="dnum" style="${esFin?'color:#aaa':''}">${d}</div>`;
+      COMP.forEach((c,i)=>{const t=tc(i,f);html+=`<div class="crow ${CRC[t]}">${c.n.split(' ')[0]} ${label(t)}</div>`;});
+      html+='</div>';col++;
+      if(col%7===0&&d<ul)html+='</div><div class="semana">';
+    }
+    const r=col%7===0?0:7-(col%7);
+    for(let v=0;v<r;v++)html+='<div class="multi-dia vacio"></div>';
+    html+='</div></div></div>';
+    document.getElementById('calContent').innerHTML=html;
+  } else {
+    const i=vista,c=COMP[i];
+    let html=`<div class="cal-wrap"><div class="cal-header-bar ${c.hdr}">${c.n}</div>
+    <div class="dias-hdr"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+    <div class="semanas"><div class="semana">`;
+    for(let v=0;v<dow;v++)html+='<div class="dia vacio"></div>';
+    let col=dow;
+    for(let d=1;d<=ul;d++){
+      const f=new Date(vY,vM,d),esH=f.toDateString()===hoy.toDateString(),esFin=f.getDay()===0||f.getDay()===6;
+      const t=tc(i,f);
+      html+=`<div class="dia${esH?' hoy':esFin?' finde':''}"><div class="dnum" style="${esFin?'color:#aaa':''}">${d}</div><div class="ttag ${TC[t]}">${label(t)}</div></div>`;
+      col++;
+      if(col%7===0&&d<ul)html+='</div><div class="semana">';
+    }
+    const r=col%7===0?0:7-(col%7);
+    for(let v=0;v<r;v++)html+='<div class="dia vacio"></div>';
+    html+='</div></div></div>';
+    document.getElementById('calContent').innerHTML=html;
+  }
+}
+function render(){document.getElementById('titmes').textContent=MESES[vM]+' '+vY;renderNow();renderCal();}
+document.getElementById('btnAnt').onclick=function(){vM--;if(vM<0){vM=11;vY--;}render();};
+document.getElementById('btnSig').onclick=function(){vM++;if(vM>11){vM=0;vY++;}render();};
+render();setInterval(renderNow,60000);
+</script>
+</body>
+</html>
