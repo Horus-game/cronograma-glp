@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coordenadas Operativas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#e8e8e8;min-height:100vh;padding-bottom:24px}
+.topbar{background:#1a3a5c;color:white;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.topbar h1{font-size:16px;font-weight:600}
+#buscador{background:#2a5f9e;border:none;border-radius:6px;color:white;padding:7px 12px;font-size:12px;font-family:inherit;width:190px;outline:none}
+#buscador::placeholder{color:#a0c0e0}
+.sectores-wrap{background:white;border-bottom:2px solid #e0e0e0;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+.sectores-inner{display:inline-flex;padding:0 8px}
+.sector-btn{background:none;border:none;border-bottom:3px solid transparent;padding:10px 14px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;color:#777;margin-bottom:-2px;transition:color .15s;white-space:nowrap}
+.sector-btn:hover{color:#1a3a5c;background:#f5f8ff}
+.sector-btn.active{border-bottom-color:var(--tab-color);color:var(--tab-color)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 16px}
+.stat{background:white;border-radius:8px;padding:10px 12px;border-top:3px solid #3b9eff;text-align:center;transition:border-color .3s}
+.stat-val{font-size:20px;font-weight:700;color:#1a3a5c}
+.stat-lbl{font-size:10px;color:#9ca3af;margin-top:2px;text-transform:uppercase;letter-spacing:.06em}
+.tabla-wrap{margin:0 16px;background:white;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:9px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:white;background:#1a3a5c;transition:background .3s}
+td{padding:9px 12px;border-bottom:1px solid #f0f0f0;vertical-align:middle;color:#374151}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f5f8ff}
+.num{color:#9ca3af;font-size:11px;width:36px;text-align:center}
+.nombre{font-weight:600;color:#1a3a5c}
+.coord{font-family:monospace;font-size:11px;color:#555;background:#f8f8f8;padding:3px 7px;border-radius:4px;border:1px solid #e0e0e0;display:inline-block}
+.badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;color:white;margin-left:6px;vertical-align:middle}
+.acciones{display:flex;gap:5px}
+.btn{border:none;padding:6px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;transition:opacity .15s}
+.btn:active{opacity:.75}
+.btn-copiar{background:#1976d2;color:white}
+.btn-maps{background:#2e7d32;color:white}
+.empty{text-align:center;padding:30px;color:#bbb;font-size:13px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a3a5c;color:white;padding:9px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:520px){.col-coord{display:none}#buscador{width:130px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📍 Coordenadas Operativas</h1>
+  <input id="buscador" type="text" placeholder="🔍 Buscar en todos..." oninput="filtrar(this.value)">
+</div>
+
+<div class="sectores-wrap"><div class="sectores-inner" id="tabs"></div></div>
+
+<div class="stats">
+  <div class="stat" id="stat1"><div class="stat-val" id="s-sector">—</div><div class="stat-lbl">En sector</div></div>
+  <div class="stat" id="stat2"><div class="stat-val" id="s-visibles">—</div><div class="stat-lbl">Mostrando</div></div>
+  <div class="stat" id="stat3"><div class="stat-val" id="s-total">—</div><div class="stat-lbl">Total general</div></div>
+</div>
+
+<div class="tabla-wrap">
+  <table>
+    <thead><tr id="thead-row">
+      <th style="width:36px">#</th><th>Lugar</th>
+      <th class="col-coord">Coordenadas</th><th>Acciones</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="toast" id="toast">✓ Copiado al portapapeles</div>
+
+<script>
+var SECTORES = {
+  "SUR":               {color:"#1a3a5c", lugares:[["Aero Village","-33.165850,-64.366830"],["Autódromo","-33.177159,-64.355728"],["Bulevar YPV Alberdi","-33.147481,-64.341692"],["Capilla Santa Rita","-33.152883,-64.342285"],["Centro de Jubilados","-33.141815,-64.353291"],["Club Deportivo Río Cuarto","-33.178309,-64.355423"],["Colegio Concordia","-33.149105,-64.351445"],["Colegio Davinci","-33.156538,-64.366362"],["Colegio Fotheringham","-33.160043,-64.359185"],["Colegio IPET 79","-33.151565,-64.341710"],["Colegio PROA","-33.151493,-64.352693"],["Colegio Sabattini","-33.134839,-64.348382"],["Colegio Sócrates Anaya","-33.145002,-64.343038"],["Complejo M.A.Kempes","-31.368689,-64.246604"],["Depósito Barale","-33.157246,-64.364363"],["Depósito del Top","-33.166467,-64.358427"],["Ex Matadero","-33.151232,-64.347889"],["Hotel del Sol","-33.160002,-64.372124"],["Hotel Momentos","-33.154496,-64.366830"],["Interior Parque Sur","-33.153676,-64.354649"],["Levados","-33.145355,-64.349704"],["Plaza al final de Laprida","-33.153684,-64.349103"],["Plaza Liniers y Mosconi","-33.153338,-64.344367"],["Polideportivo 112 Viviendas","-33.146590,-64.343697"],["Rawson 200","-33.141079,-64.349947"],["Sociedad Rural","-33.159112,-64.358490"],["Vecinal 11 de Noviembre","-33.149171,-64.341185"]]},
+  "Banda Norte Oeste": {color:"#2e6b2e", lugares:[]},
+  "Banda Norte Este":  {color:"#8b4513", lugares:[]},
+  "Castelli":          {color:"#5c1a8c", lugares:[]},
+  "Centro":            {color:"#a01010", lugares:[]},
+  "Abilene":           {color:"#0d7070", lugares:[]},
+  "Alberdi":           {color:"#7a5010", lugares:[]},
+  "Costanera Sur":     {color:"#1040b0", lugares:[]},
+  "Villa Dalcar":      {color:"#444444", lugares:[]}
+};
+
+Object.keys(SECTORES).forEach(function(s){
+  SECTORES[s].lugares.sort(function(a,b){return a[0].localeCompare(b[0],'es');});
+});
+
+var totalGeneral = Object.keys(SECTORES).reduce(function(acc,s){return acc+SECTORES[s].lugares.length;},0);
+document.getElementById('s-total').textContent = totalGeneral;
+
+var sectorActivo = 'todos';
+var busqueda = '';
+
+// Construir tabs
+(function(){
+  var tabs = document.getElementById('tabs');
+  function makeBtn(label, key, color){
+    var b = document.createElement('button');
+    b.className = 'sector-btn' + (key==='todos'?' active':'');
+    b.textContent = label;
+    b.style.setProperty('--tab-color', color);
+    b.setAttribute('data-key', key);
+    b.onclick = function(){ setSector(key, b); };
+    tabs.appendChild(b);
+  }
+  makeBtn('🌐 Todos', 'todos', '#1a3a5c');
+  Object.keys(SECTORES).forEach(function(s){
+    makeBtn(s, s, SECTORES[s].color);
+  });
+})();
+
+function setSector(s, btn){
+  sectorActivo = s;
+  busqueda = '';
+  document.getElementById('buscador').value = '';
+  document.querySelectorAll('.sector-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  render();
+}
+
+function filtrar(v){
+  busqueda = v;
+  if(v){
+    sectorActivo = 'todos';
+    document.querySelectorAll('.sector-btn').forEach(function(b){b.classList.remove('active');});
+    document.querySelector('[data-key="todos"]').classList.add('active');
+  }
+  render();
+}
+
+function getColor(){
+  return sectorActivo==='todos' ? '#1a3a5c' : SECTORES[sectorActivo].color;
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function render(){
+  var color = getColor();
+  var q = busqueda.toLowerCase().trim();
+
+  // Aplicar color al header de tabla y stats
+  document.getElementById('thead-row').style.background = color;
+  ['stat1','stat2','stat3'].forEach(function(id){
+    document.getElementById(id).style.borderTopColor = color;
+  });
+
+  var filas = [];
+  var sectoresAMostrar = sectorActivo==='todos' ? Object.keys(SECTORES) : [sectorActivo];
+  sectoresAMostrar.forEach(function(s){
+    SECTORES[s].lugares.forEach(function(l){
+      if(!q || l[0].toLowerCase().indexOf(q)>=0 || s.toLowerCase().indexOf(q)>=0)
+        filas.push({nombre:l[0], coord:l[1], sector:s});
+    });
+  });
+
+  var enSector = sectorActivo==='todos' ? totalGeneral : SECTORES[sectorActivo].lugares.length;
+  document.getElementById('s-sector').textContent = enSector;
+  document.getElementById('s-visibles').textContent = filas.length;
+
+  if(!filas.length){
+    var msg = busqueda
+      ? 'Sin resultados para "'+esc(busqueda)+'"'
+      : 'Este sector no tiene lugares cargados aún';
+    document.getElementById('tbody').innerHTML='<tr><td colspan="4" class="empty">'+msg+'</td></tr>';
+    return;
+  }
+
+  var mostrarBadge = sectorActivo==='todos' || !!busqueda;
+  var html = filas.map(function(f,i){
+    var badge = mostrarBadge
+      ? '<span class="badge" style="background:'+SECTORES[f.sector].color+'">'+esc(f.sector)+'</span>'
+      : '';
+    return '<tr>'
+      +'<td class="num">'+(i+1)+'</td>'
+      +'<td class="nombre">'+esc(f.nombre)+badge+'</td>'
+      +'<td class="col-coord"><span class="coord">'+esc(f.coord)+'</span></td>'
+      +'<td><div class="acciones">'
+        +'<button class="btn btn-copiar" onclick="copiar(\''+f.coord+'\')">📋 Copiar</button>'
+        +'<button class="btn btn-maps" onclick="abrirMaps(\''+f.coord+'\')">🗺 Maps</button>'
+      +'</div></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('tbody').innerHTML = html;
+}
+
+var toastTimer;
+function copiar(coord){
+  navigator.clipboard
+    ? navigator.clipboard.writeText(coord).then(showToast)
+    : fallbackCopiar(coord);
+}
+function fallbackCopiar(coord){
+  var t=document.createElement('textarea');
+  t.value=coord; document.body.appendChild(t); t.select();
+  document.execCommand('copy'); document.body.removeChild(t);
+  showToast();
+}
+function showToast(){
+  var t=document.getElementById('toast');
+  t.classList.add('show'); clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.classList.remove('show');},1800);
+}
+function abrirMaps(coord){ window.open('https://maps.google.com/?q='+coord,'_blank'); }
+
+render();
+</script>
+</body>
+</html>
